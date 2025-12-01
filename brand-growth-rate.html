@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Growth Rate Dashboard - Leadshook</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5"></script>
+    <link rel="stylesheet" href="nes-theme.css">
+    <style>
+        /* Improved Readability - Use readable font for data */
+        .readable-font {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+        }
+
+        /* Growth Rate Dashboard Specific Styles */
+        .growth-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .growth-card {
+            background: white;
+            border: 4px solid #212529;
+            padding: 30px;
+            box-shadow: 4px 4px 0 #000;
+            text-align: center;
+            position: relative;
+        }
+
+        .growth-card.brand {
+            background: linear-gradient(135deg, #e76e55 0%, #d65945 100%);
+            color: white;
+        }
+
+        .growth-card.category {
+            background: linear-gradient(135deg, #209cee 0%, #1b8ad3 100%);
+            color: white;
+        }
+
+        .growth-card-label {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .growth-card-value {
+            font-size: 3.5rem;
+            font-weight: normal;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        .growth-card-sublabel {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .growth-card-detail {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 3px solid rgba(255,255,255,0.3);
+            font-size: 1rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+        }
+
+        .insight-banner {
+            background: #92cc41;
+            border: 4px solid #212529;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            box-shadow: 4px 4px 0 #000;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .insight-banner.positive {
+            background: #92cc41;
+        }
+
+        .insight-banner.negative {
+            background: #e76e55;
+        }
+
+        .insight-banner.neutral {
+            background: #f7d51d;
+        }
+
+        .insight-icon {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+        }
+
+        .insight-content {
+            flex: 1;
+        }
+
+        .insight-headline {
+            font-size: 1.2rem;
+            color: #212529;
+            margin-bottom: 10px;
+        }
+
+        .insight-detail {
+            font-size: 1rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #212529;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .category-breakdown {
+            background: white;
+            border: 4px solid #212529;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 4px 4px 0 #000;
+        }
+
+        .category-group {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+
+        .category-group:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .category-group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .category-group-name {
+            font-size: 1rem;
+            color: #212529;
+        }
+
+        .category-group-volume {
+            font-size: 1rem;
+            color: #209cee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .category-keywords {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .keyword-tag {
+            background: #f0f0f0;
+            border: 2px solid #212529;
+            padding: 8px 14px;
+            font-size: 0.9rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .keyword-tag .volume {
+            color: #666;
+            margin-left: 8px;
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .period-btn {
+            padding: 12px 24px;
+            border: 3px solid #212529;
+            background: #f0f0f0;
+            color: #212529;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .period-btn:hover {
+            background: #fff;
+            transform: translateY(-2px);
+        }
+
+        .period-btn.active {
+            background: #209cee;
+            color: white;
+        }
+
+        /* Table readability improvements */
+        #dataTable td,
+        #dataTable th {
+            font-size: 0.95rem;
+            padding: 14px 16px;
+        }
+
+        #dataTable td {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #dataTable .trend-up,
+        #dataTable .trend-down {
+            font-weight: 600;
+        }
+
+        /* Date range indicator */
+        .date-range-indicator {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .growth-comparison {
+                grid-template-columns: 1fr;
+            }
+
+            .growth-card-value {
+                font-size: 2.5rem;
+            }
+
+            .insight-banner {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-brand">Leadshook SEO</div>
+        <div class="nav-links">
+            <a href="share-of-search.html" class="nav-link" data-page="share-of-search">Share of Search</a>
+            <a href="brand-growth-rate.html" class="nav-link active" data-page="brand-growth-rate">Brand Growth Rate</a>
+        </div>
+        <div class="nav-competitor-set">
+            <select style="visibility: hidden;">
+                <option>Direct Competitors</option>
+            </select>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Brand Growth Rate</h1>
+            <p class="subtitle">Baseline Data - November 2025</p>
+            <div class="edit-note">
+                <strong>How to Update Data:</strong>
+                Edit the CSV files in the <code>data/</code> folder: <code>brand-keywords.csv</code> and <code>category-keywords.csv</code>. Add new rows with month, keyword, and volume. The dashboard will automatically calculate growth rates when you add data for future months.
+            </div>
+        </div>
+
+        <div class="view-toggle-container" style="display: none;">
+            <div class="period-selector">
+                <button class="period-btn active" id="baselineBtn" onclick="setPeriod('baseline')">Baseline</button>
+            </div>
+            <div class="date-range-indicator" id="dateRangeIndicator">
+                <!-- Will be populated -->
+            </div>
+        </div>
+
+        <div id="insightBanner" class="insight-banner neutral">
+            <div class="insight-icon">📊</div>
+            <div class="insight-content">
+                <div class="insight-headline" id="insightHeadline">Baseline Established</div>
+                <div class="insight-detail" id="insightDetail">This is your starting point for November 2025. Add data for future months to see growth trends and comparisons.</div>
+            </div>
+        </div>
+
+        <div class="growth-comparison">
+            <div class="growth-card brand">
+                <div class="growth-card-label">Leadshook Brand</div>
+                <div class="growth-card-value" id="brandGrowth">220</div>
+                <div class="growth-card-sublabel">Baseline Volume</div>
+                <div class="growth-card-detail">
+                    <span id="brandCurrentVolume">220</span> monthly searches
+                    <br>November 2025
+                </div>
+            </div>
+
+            <div class="growth-card category">
+                <div class="growth-card-label">Category Total</div>
+                <div class="growth-card-value" id="categoryGrowth">9.1K</div>
+                <div class="growth-card-sublabel">Baseline Volume</div>
+                <div class="growth-card-detail">
+                    <span id="categoryCurrentVolume">9,110</span> monthly searches
+                    <br>November 2025
+                </div>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card primary">
+                <div class="metric-label">Growth Delta</div>
+                <div class="metric-value" id="growthDelta">--</div>
+                <div class="metric-trend" id="growthDeltaTrend"></div>
+                <div class="metric-subvalue">Brand vs Category</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Brand Volume</div>
+                <div class="metric-value" id="totalBrandVolume">--</div>
+                <div class="metric-trend"></div>
+                <div class="metric-subvalue">Monthly Searches</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Category Volume</div>
+                <div class="metric-value" id="totalCategoryVolume">--</div>
+                <div class="metric-trend"></div>
+                <div class="metric-subvalue">Monthly Searches</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Brand Share</div>
+                <div class="metric-value" id="brandShareOfCategory">--</div>
+                <div class="metric-trend" id="brandShareTrend"></div>
+                <div class="metric-subvalue">of Category</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container" style="grid-column: 1 / -1;">
+                <h2 class="chart-title">Growth Trend Comparison</h2>
+                <canvas id="growthTrendChart"></canvas>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h2 class="chart-title">Brand vs Category Volume</h2>
+                <canvas id="volumeComparisonChart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">Monthly Growth Rates</h2>
+                <canvas id="growthRateChart"></canvas>
+            </div>
+        </div>
+
+        <div class="category-breakdown">
+            <h2 class="chart-title">Category Keywords Breakdown</h2>
+            <div id="categoryBreakdown">
+                <!-- Will be populated -->
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h2 class="chart-title">Monthly Data</h2>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Brand Volume</th>
+                        <th>Brand Growth</th>
+                        <th>Category Volume</th>
+                        <th>Category Growth</th>
+                        <th>Delta</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // DATA STRUCTURES (populated from CSV)
+        // ==========================================
+        const brandData = {
+            monthlyVolumes: {},  // { "Month Year": [vol1, vol2, ...] }
+            keywords: []         // ['leadshook', 'leads hook', ...]
+        };
+
+        const categoryData = {
+            groups: {},          // { "Group Name": { keywords: { "keyword": volume } } }
+            monthlyVolumes: {}   // { "Month Year": totalVolume }
+        };
+
+        // ==========================================
+        // CSV LOADING FUNCTIONS
+        // ==========================================
+        async function loadCSV(filename) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(filename, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: results => resolve(results.data),
+                    error: error => reject(error)
+                });
+            });
+        }
+
+        function parseBrandCSV(csvData) {
+            const keywordOrder = [];
+
+            csvData.forEach(row => {
+                const month = row.month;
+                const keyword = row.keyword;
+                const volume = parseInt(row.volume, 10);
+
+                // Track keyword order
+                if (!keywordOrder.includes(keyword)) {
+                    keywordOrder.push(keyword);
+                }
+
+                // Initialize month if needed
+                if (!brandData.monthlyVolumes[month]) {
+                    brandData.monthlyVolumes[month] = [];
+                }
+            });
+
+            // Now fill in volumes in correct order
+            brandData.keywords = keywordOrder;
+
+            csvData.forEach(row => {
+                const month = row.month;
+                const keyword = row.keyword;
+                const volume = parseInt(row.volume, 10);
+                const keywordIndex = keywordOrder.indexOf(keyword);
+
+                if (!brandData.monthlyVolumes[month]) {
+                    brandData.monthlyVolumes[month] = new Array(keywordOrder.length).fill(0);
+                }
+                brandData.monthlyVolumes[month][keywordIndex] = volume;
+            });
+        }
+
+        function parseCategoryCSV(csvData) {
+            csvData.forEach(row => {
+                const month = row.month;
+                const group = row.group;
+                const keyword = row.keyword;
+                const volume = parseInt(row.volume, 10);
+
+                // Initialize group if needed
+                if (!categoryData.groups[group]) {
+                    categoryData.groups[group] = { keywords: {} };
+                }
+
+                // Store latest volume for keyword (for breakdown display)
+                categoryData.groups[group].keywords[keyword] = volume;
+
+                // Accumulate monthly totals
+                if (!categoryData.monthlyVolumes[month]) {
+                    categoryData.monthlyVolumes[month] = 0;
+                }
+                categoryData.monthlyVolumes[month] += volume;
+            });
+        }
+
+        async function loadAllData() {
+            try {
+                const [brandCSV, categoryCSV] = await Promise.all([
+                    loadCSV('data/brand-keywords.csv'),
+                    loadCSV('data/category-keywords.csv')
+                ]);
+
+                parseBrandCSV(brandCSV);
+                parseCategoryCSV(categoryCSV);
+
+                // Initialize dashboard after data is loaded
+                updateDashboard();
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                alert('Failed to load CSV data. Make sure you are running this from a web server.');
+            }
+        }
+
+        // ==========================================
+        // VISUALIZATION CODE
+        // ==========================================
+
+        // Use readable fonts for charts
+        Chart.defaults.color = '#212529';
+        Chart.defaults.borderColor = '#212529';
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.font.size = 12;
+
+        let growthTrendChart = null;
+        let volumeComparisonChart = null;
+        let growthRateChart = null;
+        let currentPeriod = 'yoy';
+
+        // Calculate total brand volume for a month
+        function getBrandVolume(month) {
+            const volumes = brandData.monthlyVolumes[month];
+            return volumes ? volumes.reduce((sum, v) => sum + v, 0) : 0;
+        }
+
+        // Calculate category volume for a month (from CSV data)
+        function getCategoryVolume(month) {
+            return categoryData.monthlyVolumes[month] || 0;
+        }
+
+        // Get all months in chronological order
+        function getMonths() {
+            return Object.keys(brandData.monthlyVolumes);
+        }
+
+        // Calculate growth rate between two periods
+        function calculateGrowthRate(current, previous) {
+            if (!previous || previous === 0) return 0;
+            return ((current - previous) / previous) * 100;
+        }
+
+        // Get comparison month based on period
+        function getComparisonMonth(currentMonth, period) {
+            const months = getMonths();
+            const currentIndex = months.indexOf(currentMonth);
+
+            switch(period) {
+                case 'yoy':
+                    // Find same month last year
+                    const [monthName, year] = currentMonth.split(' ');
+                    const lastYear = `${monthName} ${parseInt(year) - 1}`;
+                    return months.includes(lastYear) ? lastYear : null;
+                case 'mom':
+                    return currentIndex > 0 ? months[currentIndex - 1] : null;
+                case 'qoq':
+                    return currentIndex >= 3 ? months[currentIndex - 3] : null;
+                default:
+                    return null;
+            }
+        }
+
+        // Set period and update dashboard
+        function setPeriod(period) {
+            currentPeriod = period;
+
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(period + 'Btn').classList.add('active');
+
+            updateDashboard();
+        }
+
+        // Update insight banner
+        function updateInsightBanner(brandGrowth, categoryGrowth) {
+            const banner = document.getElementById('insightBanner');
+            const headline = document.getElementById('insightHeadline');
+            const detail = document.getElementById('insightDetail');
+            const delta = brandGrowth - categoryGrowth;
+
+            banner.classList.remove('positive', 'negative', 'neutral');
+
+            if (delta > 2) {
+                banner.classList.add('positive');
+                banner.querySelector('.insight-icon').textContent = '+';
+                headline.textContent = "You're Outgrowing the Category!";
+                detail.textContent = `Your brand is growing ${delta.toFixed(1)} percentage points faster than the category. This means you're gaining Share of Search.`;
+            } else if (delta < -2) {
+                banner.classList.add('negative');
+                banner.querySelector('.insight-icon').textContent = '-';
+                headline.textContent = "Category is Outpacing Your Brand";
+                detail.textContent = `The category is growing ${Math.abs(delta).toFixed(1)} percentage points faster than your brand. Consider increasing brand awareness efforts.`;
+            } else {
+                banner.classList.add('neutral');
+                banner.querySelector('.insight-icon').textContent = '=';
+                headline.textContent = "Growing at Category Pace";
+                detail.textContent = `Your brand is growing roughly in line with the category (${Math.abs(delta).toFixed(1)}pp difference). Maintain current efforts.`;
+            }
+        }
+
+        // Update main dashboard
+        function updateDashboard() {
+            const months = getMonths();
+
+            // Check if we have no data
+            if (months.length === 0) {
+                console.error('No data loaded');
+                return;
+            }
+
+            const currentMonth = months[months.length - 1];
+            const comparisonMonth = getComparisonMonth(currentMonth, currentPeriod);
+
+            // Get volumes
+            const currentBrandVol = getBrandVolume(currentMonth);
+            const previousBrandVol = comparisonMonth ? getBrandVolume(comparisonMonth) : 0;
+            const currentCategoryVol = getCategoryVolume(currentMonth);
+            const previousCategoryVol = comparisonMonth ? getCategoryVolume(comparisonMonth) : 0;
+
+            // Calculate brand share of category
+            const brandShare = (currentBrandVol / currentCategoryVol) * 100;
+
+            // If only baseline data (one month), show baseline view
+            if (months.length === 1) {
+                // Update growth cards for baseline
+                document.getElementById('brandGrowth').textContent = currentBrandVol.toLocaleString();
+                document.getElementById('categoryGrowth').textContent = (currentCategoryVol / 1000).toFixed(1) + 'K';
+
+                document.getElementById('brandCurrentVolume').textContent = currentBrandVol.toLocaleString();
+                document.getElementById('categoryCurrentVolume').textContent = currentCategoryVol.toLocaleString();
+
+                // Update metrics for baseline
+                document.getElementById('growthDelta').textContent = 'Baseline';
+                document.getElementById('growthDeltaTrend').innerHTML = '';
+                document.getElementById('totalBrandVolume').textContent = currentBrandVol.toLocaleString();
+                document.getElementById('totalCategoryVolume').textContent = (currentCategoryVol / 1000).toFixed(1) + 'K';
+                document.getElementById('brandShareOfCategory').textContent = brandShare.toFixed(2) + '%';
+                document.getElementById('brandShareTrend').innerHTML = '';
+
+                // Update charts, breakdown, and table
+                updateCharts();
+                updateCategoryBreakdown();
+                updateTable();
+                return;
+            }
+
+            // Calculate growth rates (for multi-month data)
+            const brandGrowth = calculateGrowthRate(currentBrandVol, previousBrandVol);
+            const categoryGrowth = calculateGrowthRate(currentCategoryVol, previousCategoryVol);
+            const delta = brandGrowth - categoryGrowth;
+            const previousBrandShare = previousCategoryVol > 0 ? (previousBrandVol / previousCategoryVol) * 100 : 0;
+
+            // Update period labels
+            const periodLabels = {
+                'yoy': 'YoY',
+                'mom': 'MoM',
+                'qoq': 'QoQ'
+            };
+            document.querySelectorAll('.growth-card-sublabel').forEach(el => {
+                el.textContent = `${periodLabels[currentPeriod]} Growth Rate`;
+            });
+
+            // Update date range indicator
+            document.getElementById('dateRangeIndicator').innerHTML =
+                comparisonMonth
+                    ? `<span class="date-range-label">Comparing:</span> ${comparisonMonth} vs ${currentMonth}`
+                    : `<span class="date-range-label">Current:</span> ${currentMonth} (no comparison data)`;
+
+            // Update growth cards
+            document.getElementById('brandGrowth').textContent =
+                comparisonMonth ? (brandGrowth >= 0 ? '+' : '') + brandGrowth.toFixed(1) + '%' : 'N/A';
+            document.getElementById('categoryGrowth').textContent =
+                comparisonMonth ? (categoryGrowth >= 0 ? '+' : '') + categoryGrowth.toFixed(1) + '%' : 'N/A';
+
+            document.getElementById('brandCurrentVolume').textContent = currentBrandVol.toLocaleString();
+            document.getElementById('brandPreviousVolume').textContent = previousBrandVol.toLocaleString();
+            document.getElementById('categoryCurrentVolume').textContent = currentCategoryVol.toLocaleString();
+            document.getElementById('categoryPreviousVolume').textContent = previousCategoryVol.toLocaleString();
+
+            // Update metrics
+            document.getElementById('growthDelta').textContent =
+                comparisonMonth ? (delta >= 0 ? '+' : '') + delta.toFixed(1) + 'pp' : 'N/A';
+
+            const deltaTrend = document.getElementById('growthDeltaTrend');
+            if (comparisonMonth) {
+                if (delta > 2) {
+                    deltaTrend.innerHTML = '<span class="trend-indicator trend-up">Outpacing</span>';
+                } else if (delta < -2) {
+                    deltaTrend.innerHTML = '<span class="trend-indicator trend-down">Trailing</span>';
+                } else {
+                    deltaTrend.innerHTML = '<span class="trend-indicator trend-neutral">On Pace</span>';
+                }
+            } else {
+                deltaTrend.innerHTML = '';
+            }
+
+            document.getElementById('totalBrandVolume').textContent = currentBrandVol.toLocaleString();
+            document.getElementById('totalCategoryVolume').textContent = (currentCategoryVol / 1000).toFixed(1) + 'K';
+            document.getElementById('brandShareOfCategory').textContent = brandShare.toFixed(2) + '%';
+
+            const shareTrend = document.getElementById('brandShareTrend');
+            if (comparisonMonth && previousBrandShare > 0) {
+                const shareChange = brandShare - previousBrandShare;
+                if (shareChange > 0.01) {
+                    shareTrend.innerHTML = `<span class="trend-indicator trend-up">+${shareChange.toFixed(2)}%</span>`;
+                } else if (shareChange < -0.01) {
+                    shareTrend.innerHTML = `<span class="trend-indicator trend-down">${shareChange.toFixed(2)}%</span>`;
+                } else {
+                    shareTrend.innerHTML = `<span class="trend-indicator trend-neutral">0%</span>`;
+                }
+            } else {
+                shareTrend.innerHTML = '';
+            }
+
+            // Update insight banner
+            if (comparisonMonth) {
+                updateInsightBanner(brandGrowth, categoryGrowth);
+            }
+
+            // Update charts
+            updateCharts();
+
+            // Update category breakdown
+            updateCategoryBreakdown();
+
+            // Update table
+            updateTable();
+        }
+
+        // Update all charts
+        function updateCharts() {
+            const months = getMonths();
+
+            // Calculate data arrays
+            const brandVolumes = months.map(m => getBrandVolume(m));
+            const categoryVolumes = months.map(m => getCategoryVolume(m));
+
+            // Calculate growth rates for each month
+            const brandGrowthRates = months.map((month, index) => {
+                const compMonth = getComparisonMonth(month, currentPeriod);
+                if (!compMonth) return null;
+                return calculateGrowthRate(getBrandVolume(month), getBrandVolume(compMonth));
+            });
+
+            const categoryGrowthRates = months.map((month, index) => {
+                const compMonth = getComparisonMonth(month, currentPeriod);
+                if (!compMonth) return null;
+                return calculateGrowthRate(getCategoryVolume(month), getCategoryVolume(compMonth));
+            });
+
+            // Growth Trend Chart (normalized to 100)
+            if (growthTrendChart) growthTrendChart.destroy();
+
+            const baselineBrand = brandVolumes[0];
+            const baselineCategory = categoryVolumes[0];
+            const normalizedBrand = brandVolumes.map(v => (v / baselineBrand) * 100);
+            const normalizedCategory = categoryVolumes.map(v => (v / baselineCategory) * 100);
+
+            const growthCtx = document.getElementById('growthTrendChart').getContext('2d');
+            growthTrendChart = new Chart(growthCtx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Leadshook Brand (Indexed)',
+                            data: normalizedBrand,
+                            borderColor: '#e76e55',
+                            backgroundColor: 'rgba(231, 110, 85, 0.2)',
+                            borderWidth: 4,
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#e76e55',
+                            pointBorderColor: '#212529',
+                            pointBorderWidth: 2
+                        },
+                        {
+                            label: 'Category (Indexed)',
+                            data: normalizedCategory,
+                            borderColor: '#209cee',
+                            backgroundColor: 'rgba(32, 156, 238, 0.1)',
+                            borderWidth: 4,
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#209cee',
+                            pointBorderColor: '#212529',
+                            pointBorderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: '#d0d0d0', lineWidth: 2 },
+                            ticks: {
+                                callback: value => value.toFixed(0),
+                                font: { size: 13 }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Index (First Month = 100)',
+                                font: { size: 13 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11 }, maxRotation: 45 }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 13 }, boxWidth: 20, padding: 15 }
+                        },
+                        tooltip: {
+                            backgroundColor: '#212529',
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
+                            padding: 12,
+                            callbacks: {
+                                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Volume Comparison Chart (dual axis)
+            if (volumeComparisonChart) volumeComparisonChart.destroy();
+
+            const volumeCtx = document.getElementById('volumeComparisonChart').getContext('2d');
+            volumeComparisonChart = new Chart(volumeCtx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Brand Volume',
+                            data: brandVolumes,
+                            backgroundColor: '#e76e55',
+                            borderColor: '#212529',
+                            borderWidth: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Category Volume',
+                            data: categoryVolumes,
+                            backgroundColor: '#209cee',
+                            borderColor: '#212529',
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            beginAtZero: true,
+                            grid: { color: '#d0d0d0', lineWidth: 2 },
+                            ticks: {
+                                callback: v => v.toLocaleString(),
+                                font: { size: 12 },
+                                color: '#e76e55'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Brand',
+                                font: { size: 12 },
+                                color: '#e76e55'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                callback: v => (v/1000).toFixed(0) + 'K',
+                                font: { size: 12 },
+                                color: '#209cee'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Category',
+                                font: { size: 12 },
+                                color: '#209cee'
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10 }, maxRotation: 45 }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 13 }, boxWidth: 20, padding: 15 }
+                        },
+                        tooltip: {
+                            backgroundColor: '#212529',
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
+                            padding: 12,
+                            callbacks: {
+                                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Growth Rate Chart
+            if (growthRateChart) growthRateChart.destroy();
+
+            // Filter to only months with growth data
+            const validMonths = months.filter((_, i) => brandGrowthRates[i] !== null);
+            const validBrandGrowth = brandGrowthRates.filter(v => v !== null);
+            const validCategoryGrowth = categoryGrowthRates.filter(v => v !== null);
+
+            const growthRateCtx = document.getElementById('growthRateChart').getContext('2d');
+            growthRateChart = new Chart(growthRateCtx, {
+                type: 'bar',
+                data: {
+                    labels: validMonths,
+                    datasets: [
+                        {
+                            label: 'Brand Growth %',
+                            data: validBrandGrowth,
+                            backgroundColor: validBrandGrowth.map(v => v >= 0 ? '#92cc41' : '#e76e55'),
+                            borderColor: '#212529',
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Category Growth %',
+                            data: validCategoryGrowth,
+                            backgroundColor: '#209cee',
+                            borderColor: '#212529',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            grid: { color: '#d0d0d0', lineWidth: 2 },
+                            ticks: {
+                                callback: v => v.toFixed(0) + '%',
+                                font: { size: 12 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 10 }, maxRotation: 45 }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 13 }, boxWidth: 20, padding: 15 }
+                        },
+                        tooltip: {
+                            backgroundColor: '#212529',
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
+                            padding: 12,
+                            callbacks: {
+                                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update category breakdown section
+        function updateCategoryBreakdown() {
+            const container = document.getElementById('categoryBreakdown');
+            container.innerHTML = '';
+
+            for (const [groupName, groupData] of Object.entries(categoryData.groups)) {
+                const groupVolume = Object.values(groupData.keywords).reduce((sum, v) => sum + v, 0);
+
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'category-group';
+
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'category-group-header';
+                headerDiv.innerHTML = `
+                    <span class="category-group-name">${groupName}</span>
+                    <span class="category-group-volume">${groupVolume.toLocaleString()} monthly searches</span>
+                `;
+                groupDiv.appendChild(headerDiv);
+
+                const keywordsDiv = document.createElement('div');
+                keywordsDiv.className = 'category-keywords';
+
+                // Sort keywords by volume and take top 10
+                const sortedKeywords = Object.entries(groupData.keywords)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+
+                sortedKeywords.forEach(([keyword, volume]) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'keyword-tag';
+                    tag.innerHTML = `${keyword}<span class="volume">(${volume})</span>`;
+                    keywordsDiv.appendChild(tag);
+                });
+
+                if (Object.keys(groupData.keywords).length > 10) {
+                    const moreTag = document.createElement('span');
+                    moreTag.className = 'keyword-tag';
+                    moreTag.textContent = `+${Object.keys(groupData.keywords).length - 10} more`;
+                    keywordsDiv.appendChild(moreTag);
+                }
+
+                groupDiv.appendChild(keywordsDiv);
+                container.appendChild(groupDiv);
+            }
+        }
+
+        // Update data table
+        function updateTable() {
+            const months = getMonths();
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            months.forEach(month => {
+                const brandVol = getBrandVolume(month);
+                const categoryVol = getCategoryVolume(month);
+                const compMonth = getComparisonMonth(month, currentPeriod);
+
+                let brandGrowth = '-';
+                let categoryGrowth = '-';
+                let delta = '-';
+
+                if (compMonth) {
+                    const bg = calculateGrowthRate(brandVol, getBrandVolume(compMonth));
+                    const cg = calculateGrowthRate(categoryVol, getCategoryVolume(compMonth));
+                    const d = bg - cg;
+
+                    brandGrowth = `<span class="${bg >= 0 ? 'trend-up' : 'trend-down'}">${bg >= 0 ? '+' : ''}${bg.toFixed(1)}%</span>`;
+                    categoryGrowth = `<span class="${cg >= 0 ? 'trend-up' : 'trend-down'}">${cg >= 0 ? '+' : ''}${cg.toFixed(1)}%</span>`;
+                    delta = `<span class="${d >= 0 ? 'trend-up' : 'trend-down'}">${d >= 0 ? '+' : ''}${d.toFixed(1)}pp</span>`;
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${month}</strong></td>
+                    <td>${brandVol.toLocaleString()}</td>
+                    <td>${brandGrowth}</td>
+                    <td>${categoryVol.toLocaleString()}</td>
+                    <td>${categoryGrowth}</td>
+                    <td>${delta}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Initialize - load data from CSV files
+        loadAllData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadshook SEO Dashboard - Home</title>
+    <link rel="stylesheet" href="nes-theme.css">
+    <style>
+        .hero {
+            background: white;
+            border: 4px solid #212529;
+            padding: 60px 40px;
+            margin-bottom: 40px;
+            box-shadow: 4px 4px 0 #000;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            color: #e76e55;
+            margin-bottom: 20px;
+            text-shadow: 4px 4px 0 #000;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .hero p {
+            font-size: 1rem;
+            color: #212529;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .hero-subtitle {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-card {
+            background: white;
+            border: 4px solid #212529;
+            padding: 30px;
+            box-shadow: 4px 4px 0 #000;
+            transition: transform 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-card::before {
+            content: "";
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 40px;
+            height: 40px;
+            background: #f7d51d;
+            border-left: 4px solid #212529;
+            border-bottom: 4px solid #212529;
+            clip-path: polygon(100% 0, 0 0, 100% 100%);
+        }
+
+        .dashboard-card:hover {
+            transform: translate(-4px, -4px);
+            box-shadow: 8px 8px 0 #000;
+        }
+
+        .dashboard-card.primary {
+            background: linear-gradient(135deg, #e76e55 0%, #d65943 100%);
+            color: white;
+        }
+
+        .dashboard-card.secondary {
+            background: linear-gradient(135deg, #209cee 0%, #1b8ad3 100%);
+            color: white;
+        }
+
+        .card-number {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 2rem;
+            opacity: 0.3;
+            font-weight: normal;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-description {
+            font-size: 0.75rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+
+        .card-features {
+            list-style: none;
+            margin-bottom: 25px;
+            font-size: 0.7rem;
+            line-height: 2;
+        }
+
+        .card-features li::before {
+            content: "▶";
+            margin-right: 10px;
+            color: #f7d51d;
+        }
+
+        .dashboard-card.primary .card-features li::before {
+            color: #92cc41;
+        }
+
+        .dashboard-card.secondary .card-features li::before {
+            color: #92cc41;
+        }
+
+        .btn-dashboard {
+            display: inline-block;
+            padding: 15px 30px;
+            background: white;
+            color: #212529;
+            text-decoration: none;
+            border: 4px solid #212529;
+            font-size: 0.8rem;
+            font-family: 'Press Start 2P', cursive;
+            box-shadow: 3px 3px 0 #000;
+            transition: all 0.1s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-dashboard:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #000;
+            background: #f7d51d;
+        }
+
+        .btn-dashboard:active {
+            transform: translate(0, 0);
+            box-shadow: 2px 2px 0 #000;
+        }
+
+        .info-section {
+            background: white;
+            border: 4px solid #212529;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 4px 4px 0 #000;
+        }
+
+        .info-section h2 {
+            font-size: 1.5rem;
+            color: #212529;
+            margin-bottom: 20px;
+            border-bottom: 4px solid #212529;
+            padding-bottom: 10px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            background: #f0f0f0;
+            border: 3px solid #212529;
+            padding: 20px;
+            font-size: 0.7rem;
+            line-height: 1.8;
+        }
+
+        .info-item-title {
+            font-size: 0.8rem;
+            color: #e76e55;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .quick-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .quick-link {
+            padding: 10px 20px;
+            background: #92cc41;
+            border: 3px solid #212529;
+            color: #212529;
+            text-decoration: none;
+            font-size: 0.7rem;
+            box-shadow: 3px 3px 0 #000;
+            transition: all 0.1s ease;
+        }
+
+        .quick-link:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #000;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            background: white;
+            border: 4px solid #212529;
+            box-shadow: 4px 4px 0 #000;
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 40px;
+        }
+
+        .footer-brand {
+            color: #e76e55;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .hero p {
+                font-size: 0.7rem;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-title {
+                font-size: 1.2rem;
+            }
+
+            .card-features {
+                font-size: 0.65rem;
+            }
+
+            .btn-dashboard {
+                font-size: 0.7rem;
+                padding: 12px 20px;
+            }
+        }
+
+        /* Pixel decoration */
+        .pixel-decoration {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #212529;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            background: #e76e55;
+            border: 2px solid #212529;
+            animation: blink 1s steps(2, start) infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+        <div class="nav-brand">LEADSHOOK SEO</div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link active">HOME</a>
+            <a href="share-of-search.html" class="nav-link">SHARE OF SEARCH</a>
+            <a href="brand-growth-rate.html" class="nav-link">BRAND GROWTH</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1>SEO ANALYTICS</h1>
+            <p>Track LeadsHook's search performance and growth</p>
+        
+        </div>
+
+        <!-- Dashboard Cards -->
+        <div class="dashboard-grid">
+            <!-- Share of Search Dashboard -->
+            <div class="dashboard-card primary">
+                <span class="card-number">01</span>
+                <h2 class="card-title">Share of Search</h2>
+                <p class="card-description">
+                    Track your brand's search volume as a percentage of total competitor search volume.
+                </p>
+                <ul class="card-features">
+                    <li>Monthly competitive analysis</li>
+                    <li>Direct vs Enterprise competitors</li>
+                    <li>Trend forecasting</li>
+                    <li>Market ranking</li>
+                </ul>
+                <a href="share-of-search.html" class="btn-dashboard">VIEW DASHBOARD</a>
+            </div>
+
+            <!-- Brand Growth Rate Dashboard -->
+            <div class="dashboard-card secondary">
+                <span class="card-number">02</span>
+                <h2 class="card-title">Brand Growth Rate</h2>
+                <p class="card-description">
+                    Compare your brand's search growth against category keyword growth.
+                </p>
+                <ul class="card-features">
+                    <li>YoY, MoM, QoQ comparisons</li>
+                    <li>Growth delta analysis</li>
+                    <li>Category breakdown</li>
+                    <li>Trend visualization</li>
+                </ul>
+                <a href="brand-growth-rate.html" class="btn-dashboard">VIEW DASHBOARD</a>
+            </div>
+        </div>
+
+        <!-- Information Section -->
+        <div class="info-section">
+            <h2>KEY METRICS TRACKED</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong class="info-item-title">Share of Search</strong>
+                    Your brand's percentage of total branded search volume in your competitive set
+                </div>
+                <div class="info-item">
+                    <strong class="info-item-title">Market Rank</strong>
+                    Your position among competitors ranked by search volume
+                </div>
+                <div class="info-item">
+                    <strong class="info-item-title">Growth Delta</strong>
+                    The difference between your brand growth and category growth rates
+                </div>
+                <div class="info-item">
+                    <strong class="info-item-title">Brand Share</strong>
+                    Your brand volume as a percentage of total category keyword volume
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-brand">LEADSHOOK SEO DASHBOARD</div>
+            <div>Retro NES-themed analytics powered by Ahrefs data</div>
+            <div style="margin-top: 10px; opacity: 0.7;">
+                Data updates monthly | Best viewed in Chrome or Firefox
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share of Search Dashboard - Leadshook</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5"></script>
+    <link rel="stylesheet" href="nes-theme.css">
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-brand">Leadshook SEO</div>
+        <div class="nav-links">
+            <a href="share-of-search.html" class="nav-link active" data-page="share-of-search">Share of Search</a>
+            <a href="brand-growth-rate.html" class="nav-link" data-page="brand-growth-rate">Brand Growth Rate</a>
+        </div>
+        <div class="nav-competitor-set">
+            <select id="competitorSetDropdown" onchange="switchCompetitorSet(this.value)">
+                <option value="direct">Direct Competitors</option>
+                <option value="enterprise">Enterprise Players</option>
+            </select>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>Share of Search Dashboard</h1>
+            <p class="subtitle">Brand Search Volume Analysis - Leadshook vs Competitors</p>
+            <div class="edit-note">
+                <strong>📝 How to Update Monthly Data:</strong>
+                Edit the CSV files in the <code>data/</code> folder. Add new rows with month, brand, keyword, and volume. The dashboard will automatically calculate Share of Search and show trends.
+            </div>
+        </div>
+
+        <div class="view-toggle-container">
+            <div class="view-toggle">
+                <button class="view-btn active" id="monthlyViewBtn" onclick="setViewMode('monthly')">Monthly View</button>
+                <button class="view-btn" id="trendViewBtn" onclick="setViewMode('trend')">Trend Analysis</button>
+            </div>
+            <div class="date-range-indicator" id="dateRangeIndicator">
+                <!-- Date range will be populated here -->
+            </div>
+        </div>
+
+        <div class="tabs-container" id="monthTabsContainer">
+            <div class="tabs" id="monthTabs">
+                <!-- Tabs will be generated here -->
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card primary">
+                <div class="metric-label">Share of Search</div>
+                <div class="metric-value" id="shareOfSearch">--%</div>
+                <div class="metric-trend" id="shareOfSearchTrend"></div>
+                <div class="metric-subvalue">Leadshook Brand Share</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Leadshook Volume</div>
+                <div class="metric-value" id="leadshookVolume">--</div>
+                <div class="metric-trend" id="leadshookVolumeTrend"></div>
+                <div class="metric-subvalue">Monthly Searches</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Total Market</div>
+                <div class="metric-value" id="totalVolume">--</div>
+                <div class="metric-trend"></div>
+                <div class="metric-subvalue">All Brand Searches</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-label">Market Rank</div>
+                <div class="metric-value" id="marketRank">--</div>
+                <div class="metric-trend" id="marketRankTrend"></div>
+                <div class="metric-subvalue" id="rankSubtext">of -- competitors</div>
+            </div>
+        </div>
+
+        <div id="monthlyView">
+            <div class="chart-container" style="width: 100%;">
+                <h2 class="chart-title">Market Share by Competitor</h2>
+                <canvas id="barChart"></canvas>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2 class="chart-title">Detailed Breakdown</h2>
+                    <div class="table-controls">
+                        <input type="text" id="brandFilter" class="brand-filter" placeholder="Filter brands..." oninput="filterTable()">
+                    </div>
+                </div>
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name" onclick="sortTable('name')">Brand <span class="sort-icon"></span></th>
+                            <th>Keywords</th>
+                            <th class="sortable" data-sort="volume" onclick="sortTable('volume')">Total Volume <span class="sort-icon"></span></th>
+                            <th class="sortable" data-sort="share" onclick="sortTable('share')">Share of Search <span class="sort-icon"></span></th>
+                            <th>Visual</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="trendView" style="display: none;">
+            <div class="competitor-selector-container">
+                <h3 class="selector-title">Compare Competitors</h3>
+                <div class="competitor-checkboxes" id="competitorCheckboxes">
+                    <!-- Checkboxes will be generated here -->
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container" style="grid-column: 1 / -1;">
+                    <h2 class="chart-title">Search Volume Trend (with Forecast)</h2>
+                    <canvas id="trendLineChart"></canvas>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h2 class="chart-title">Share of Search Over Time</h2>
+                    <canvas id="shareOfSearchTrendChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h2 class="chart-title">Leadshook Keyword Breakdown</h2>
+                    <canvas id="keywordBreakdownChart"></canvas>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h2 class="chart-title">Monthly Progress</h2>
+                <table id="trendTable">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Total Volume</th>
+                            <th>Change</th>
+                            <th>Share of Search</th>
+                            <th>Change</th>
+                            <th>Top Keyword</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trendTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // COMPETITOR SETS CONFIGURATION
+        // ==========================================
+        const competitorSets = {
+            "direct": {
+                name: "Direct Competitors",
+                description: "Quiz & Lead Generation Tools",
+                csvFile: "data/direct-competitors.csv",
+                monthlyData: {},
+                brandKeywords: {},
+                brandColors: {}
+            },
+            "enterprise": {
+                name: "Enterprise Players",
+                description: "Major Form & Survey Platforms",
+                csvFile: "data/enterprise-players.csv",
+                monthlyData: {},
+                brandKeywords: {},
+                brandColors: {}
+            }
+        };
+
+        // Color palette for brands (assigned dynamically)
+        const colorPalette = [
+            '#e76e55', '#92cc41', '#209cee', '#f7d51d', '#cc99ff',
+            '#ff9966', '#66cccc', '#ff6699', '#99cc66', '#6699ff',
+            '#ffcc66', '#cc6699', '#66cc99', '#9999ff', '#33cc99',
+            '#ff8080', '#80ff80', '#8080ff', '#ffff80', '#ff80ff'
+        ];
+
+        // Parse CSV and transform to required data structure
+        function parseCSVToDataStructure(csvData) {
+            const monthlyData = {};
+            const brandKeywords = {};
+            const brandColors = {};
+            const brandOrder = [];
+
+            csvData.forEach(row => {
+                const month = row.month;
+                const brand = row.brand;
+                const keyword = row.keyword;
+                const volume = parseInt(row.volume, 10);
+
+                // Track brand order for color assignment
+                if (!brandOrder.includes(brand)) {
+                    brandOrder.push(brand);
+                }
+
+                // Initialize month if needed
+                if (!monthlyData[month]) {
+                    monthlyData[month] = {};
+                }
+
+                // Initialize brand in month if needed
+                if (!monthlyData[month][brand]) {
+                    monthlyData[month][brand] = [];
+                }
+
+                // Add volume
+                monthlyData[month][brand].push(volume);
+
+                // Track keywords per brand
+                if (!brandKeywords[brand]) {
+                    brandKeywords[brand] = [];
+                }
+                if (!brandKeywords[brand].includes(keyword)) {
+                    brandKeywords[brand].push(keyword);
+                }
+            });
+
+            // Assign colors to brands (Leadshook always gets first color)
+            const sortedBrands = brandOrder.sort((a, b) => {
+                if (a === 'Leadshook') return -1;
+                if (b === 'Leadshook') return 1;
+                return 0;
+            });
+
+            sortedBrands.forEach((brand, index) => {
+                brandColors[brand] = colorPalette[index % colorPalette.length];
+            });
+
+            return { monthlyData, brandKeywords, brandColors };
+        }
+
+        // Load CSV file and parse it
+        async function loadCSV(filename) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(filename, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        resolve(results.data);
+                    },
+                    error: function(error) {
+                        reject(error);
+                    }
+                });
+            });
+        }
+
+        // Load data for a competitor set
+        async function loadCompetitorSetData(setKey) {
+            const set = competitorSets[setKey];
+            if (Object.keys(set.monthlyData).length > 0) {
+                return; // Already loaded
+            }
+
+            const csvData = await loadCSV(set.csvFile);
+            const parsed = parseCSVToDataStructure(csvData);
+            set.monthlyData = parsed.monthlyData;
+            set.brandKeywords = parsed.brandKeywords;
+            set.brandColors = parsed.brandColors;
+        }
+
+        // ==========================================
+        // VISUALIZATION CODE
+        // ==========================================
+
+        // NES Theme Chart Defaults
+        Chart.defaults.color = '#212529';
+        Chart.defaults.borderColor = '#212529';
+        Chart.defaults.font.family = "'Press Start 2P', cursive";
+        Chart.defaults.font.size = 10;
+        Chart.defaults.font.lineHeight = 1.8;
+
+        let barChart = null;
+        let trendLineChart = null;
+        let shareOfSearchTrendChart = null;
+        let keywordBreakdownChart = null;
+
+        // Active data references (will be set by switchCompetitorSet)
+        let monthlyData = null;
+        let brandKeywords = null;
+        let brandColors = null;
+        let currentCompetitorSet = 'direct';
+        let currentMonth = null;
+        let currentView = 'monthly';
+        let currentSort = { column: 'share', direction: 'desc' };
+        let currentBrandData = [];
+        let selectedCompetitors = ['Leadshook'];
+
+        // Switch competitor set
+        async function switchCompetitorSet(setKey) {
+            currentCompetitorSet = setKey;
+
+            // Load data from CSV if not already loaded
+            await loadCompetitorSetData(setKey);
+
+            const set = competitorSets[setKey];
+
+            // Update active data references
+            monthlyData = set.monthlyData;
+            brandKeywords = set.brandKeywords;
+            brandColors = set.brandColors;
+
+            // Reset state - default to November 2025 if available, otherwise first month
+            const months = Object.keys(monthlyData);
+            currentMonth = months.includes('November 2025') ? 'November 2025' : months[0];
+            selectedCompetitors = ['Leadshook'];
+            currentSort = { column: 'share', direction: 'desc' };
+
+            // Clear filter
+            document.getElementById('brandFilter').value = '';
+
+            // Update subtitle
+            document.querySelector('.subtitle').textContent =
+                `Brand Search Volume Analysis - ${set.description}`;
+
+            // Regenerate UI
+            regenerateTabs();
+            regenerateCompetitorCheckboxes();
+
+            // Update dashboard
+            if (currentView === 'monthly') {
+                updateDashboard(currentMonth);
+            } else {
+                updateTrendView();
+            }
+
+            // Update URL
+            updateURLState();
+        }
+
+        // Regenerate month tabs
+        function regenerateTabs() {
+            const tabsContainer = document.getElementById('monthTabs');
+            tabsContainer.innerHTML = '';
+
+            const months = Object.keys(monthlyData);
+            months.forEach((month, index) => {
+                const tab = document.createElement('button');
+                tab.className = 'tab' + (month === currentMonth ? ' active' : '');
+                tab.textContent = month;
+                tab.onclick = () => switchMonth(month);
+                tabsContainer.appendChild(tab);
+            });
+
+            updateDateRangeIndicator();
+        }
+
+        // Regenerate competitor checkboxes
+        function regenerateCompetitorCheckboxes() {
+            const container = document.getElementById('competitorCheckboxes');
+            container.innerHTML = '';
+
+            const brands = Object.keys(brandKeywords);
+            brands.forEach(brand => {
+                const label = document.createElement('label');
+                label.className = 'competitor-checkbox' + (brand === 'Leadshook' ? ' leadshook-checkbox' : '');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = brand;
+                checkbox.checked = brand === 'Leadshook';
+                checkbox.disabled = brand === 'Leadshook';
+                checkbox.onchange = () => toggleCompetitor(brand, checkbox.checked);
+
+                const colorDot = document.createElement('span');
+                colorDot.className = 'color-dot';
+                colorDot.style.backgroundColor = brandColors[brand] || '#999';
+
+                label.appendChild(checkbox);
+                label.appendChild(colorDot);
+                label.appendChild(document.createTextNode(brand));
+                container.appendChild(label);
+            });
+        }
+
+        // Set view mode (monthly or trend)
+        function setViewMode(mode) {
+            currentView = mode;
+
+            document.getElementById('monthlyViewBtn').classList.toggle('active', mode === 'monthly');
+            document.getElementById('trendViewBtn').classList.toggle('active', mode === 'trend');
+            document.getElementById('monthTabsContainer').style.display = mode === 'monthly' ? 'block' : 'none';
+            document.getElementById('monthlyView').style.display = mode === 'monthly' ? 'block' : 'none';
+            document.getElementById('trendView').style.display = mode === 'trend' ? 'block' : 'none';
+
+            if (mode === 'monthly') {
+                updateDashboard(currentMonth);
+            } else {
+                updateTrendView();
+            }
+
+            updateURLState();
+        }
+
+        // Update date range indicator
+        function updateDateRangeIndicator() {
+            const months = Object.keys(monthlyData);
+            const firstMonth = months[0];
+            const lastMonth = months[months.length - 1];
+            const indicator = document.getElementById('dateRangeIndicator');
+            indicator.innerHTML = `<span class="date-range-label">Data Range:</span> ${firstMonth} - ${lastMonth} <span class="month-count">(${months.length} months)</span>`;
+        }
+
+        // Toggle competitor selection
+        function toggleCompetitor(brand, selected) {
+            if (selected && !selectedCompetitors.includes(brand)) {
+                selectedCompetitors.push(brand);
+            } else if (!selected && brand !== 'Leadshook') {
+                selectedCompetitors = selectedCompetitors.filter(b => b !== brand);
+            }
+            updateTrendView();
+        }
+
+        // Switch between months
+        function switchMonth(month) {
+            currentMonth = month;
+
+            document.querySelectorAll('#monthTabs .tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.textContent === month) {
+                    tab.classList.add('active');
+                }
+            });
+
+            updateDashboard(month);
+            updateURLState();
+        }
+
+        // URL State Management
+        function updateURLState() {
+            const params = new URLSearchParams();
+            params.set('set', currentCompetitorSet);
+            params.set('view', currentView);
+            if (currentView === 'monthly') {
+                params.set('month', currentMonth);
+            }
+            if (selectedCompetitors.length > 1) {
+                params.set('compare', selectedCompetitors.filter(c => c !== 'Leadshook').join(','));
+            }
+            const newURL = window.location.pathname + '?' + params.toString();
+            window.history.replaceState({}, '', newURL);
+        }
+
+        // Load state from URL
+        async function loadURLState() {
+            const params = new URLSearchParams(window.location.search);
+            const set = params.get('set');
+            const view = params.get('view');
+            const month = params.get('month');
+            const compare = params.get('compare');
+
+            // Set competitor set first
+            if (set && competitorSets[set]) {
+                currentCompetitorSet = set;
+                document.getElementById('competitorSetDropdown').value = set;
+            }
+
+            // Load data from CSV
+            await loadCompetitorSetData(currentCompetitorSet);
+
+            // Initialize data for the selected set
+            const activeSet = competitorSets[currentCompetitorSet];
+            monthlyData = activeSet.monthlyData;
+            brandKeywords = activeSet.brandKeywords;
+            brandColors = activeSet.brandColors;
+
+            // Default to November 2025 if available, otherwise first month
+            const months = Object.keys(monthlyData);
+            currentMonth = months.includes('November 2025') ? 'November 2025' : months[0];
+
+            // Update subtitle
+            document.querySelector('.subtitle').textContent =
+                `Brand Search Volume Analysis - ${activeSet.description}`;
+
+            // Set month if valid
+            if (month && monthlyData[month]) {
+                currentMonth = month;
+            }
+
+            // Set up UI
+            regenerateTabs();
+            regenerateCompetitorCheckboxes();
+
+            // Handle compare parameter
+            if (compare) {
+                const competitors = compare.split(',');
+                competitors.forEach(comp => {
+                    if (brandKeywords[comp] && !selectedCompetitors.includes(comp)) {
+                        selectedCompetitors.push(comp);
+                        const checkbox = document.querySelector(`input[value="${comp}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    }
+                });
+            }
+
+            // Set view
+            if (view === 'trend') {
+                setViewMode('trend');
+            } else {
+                setViewMode('monthly');
+            }
+        }
+
+        // Calculate brand totals for a specific month
+        function calculateBrandTotals(month) {
+            const data = monthlyData[month];
+            const brandTotals = [];
+
+            for (const [brandName, volumes] of Object.entries(data)) {
+                brandTotals.push({
+                    name: brandName,
+                    total: volumes.reduce((sum, vol) => sum + vol, 0),
+                    keywords: brandKeywords[brandName]
+                });
+            }
+
+            brandTotals.sort((a, b) => b.total - a.total);
+            return brandTotals;
+        }
+
+        // Get previous month data for trend calculation
+        function getPreviousMonth(currentMonth) {
+            const months = Object.keys(monthlyData);
+            const currentIndex = months.indexOf(currentMonth);
+            return currentIndex > 0 ? months[currentIndex - 1] : null;
+        }
+
+        // Calculate trend indicator
+        function getTrendIndicator(currentValue, previousValue) {
+            if (!previousValue) return '';
+
+            const change = ((currentValue - previousValue) / previousValue * 100).toFixed(1);
+            if (Math.abs(change) < 0.1) {
+                return `<span class="trend-indicator trend-neutral">→ 0%</span>`;
+            } else if (change > 0) {
+                return `<span class="trend-indicator trend-up">↑ ${change}%</span>`;
+            } else {
+                return `<span class="trend-indicator trend-down">↓ ${change}%</span>`;
+            }
+        }
+
+        // Update entire dashboard for selected month
+        function updateDashboard(month) {
+            showLoading();
+
+            const brandTotals = calculateBrandTotals(month);
+            currentBrandData = brandTotals;
+            const previousMonth = getPreviousMonth(month);
+            const previousBrandTotals = previousMonth ? calculateBrandTotals(previousMonth) : null;
+
+            const leadshookData = brandTotals.find(b => b.name === 'Leadshook');
+            const leadshookVolume = leadshookData.total;
+            const totalVolume = brandTotals.reduce((sum, brand) => sum + brand.total, 0);
+            const shareOfSearch = ((leadshookVolume / totalVolume) * 100).toFixed(2);
+            const leadshookRank = brandTotals.findIndex(b => b.name === 'Leadshook') + 1;
+
+            let previousLeadshookVolume = null;
+            let previousShareOfSearch = null;
+            let previousRank = null;
+            if (previousBrandTotals) {
+                const previousLeadshook = previousBrandTotals.find(b => b.name === 'Leadshook');
+                previousLeadshookVolume = previousLeadshook.total;
+                const previousTotal = previousBrandTotals.reduce((sum, brand) => sum + brand.total, 0);
+                previousShareOfSearch = ((previousLeadshookVolume / previousTotal) * 100).toFixed(2);
+                previousRank = previousBrandTotals.findIndex(b => b.name === 'Leadshook') + 1;
+            }
+
+            document.getElementById('shareOfSearch').textContent = shareOfSearch + '%';
+            document.getElementById('shareOfSearchTrend').innerHTML =
+                getTrendIndicator(parseFloat(shareOfSearch), previousShareOfSearch ? parseFloat(previousShareOfSearch) : null);
+
+            document.getElementById('leadshookVolume').textContent = leadshookVolume.toLocaleString();
+            document.getElementById('leadshookVolumeTrend').innerHTML =
+                getTrendIndicator(leadshookVolume, previousLeadshookVolume);
+
+            document.getElementById('totalVolume').textContent = totalVolume.toLocaleString();
+
+            document.getElementById('marketRank').textContent = '#' + leadshookRank;
+            document.getElementById('marketRankTrend').innerHTML =
+                previousRank ? getRankTrendIndicator(leadshookRank, previousRank) : '';
+            document.getElementById('rankSubtext').textContent = 'of ' + brandTotals.length + ' brands';
+
+            updateBarChart(brandTotals, totalVolume);
+            updateTable(brandTotals, totalVolume, previousBrandTotals);
+
+            hideLoading();
+        }
+
+        // Rank trend indicator (inverted - lower rank is better)
+        function getRankTrendIndicator(currentRank, previousRank) {
+            if (!previousRank) return '';
+
+            const change = previousRank - currentRank;
+            if (change === 0) {
+                return `<span class="trend-indicator trend-neutral">→ 0</span>`;
+            } else if (change > 0) {
+                return `<span class="trend-indicator trend-up">↑ ${change}</span>`;
+            } else {
+                return `<span class="trend-indicator trend-down">↓ ${Math.abs(change)}</span>`;
+            }
+        }
+
+        // Loading states
+        function showLoading() {
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.classList.add('loading');
+            });
+        }
+
+        function hideLoading() {
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.classList.remove('loading');
+            });
+        }
+
+        // Highlight table row when chart element is clicked
+        function highlightTableRow(brandName) {
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                row.classList.remove('highlighted');
+            });
+
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                const brandCell = row.querySelector('td:first-child strong');
+                if (brandCell && brandCell.textContent === brandName) {
+                    row.classList.add('highlighted');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+
+            setTimeout(() => {
+                document.querySelectorAll('#tableBody tr.highlighted').forEach(row => {
+                    row.classList.remove('highlighted');
+                });
+            }, 3000);
+        }
+
+        // Update bar chart
+        function updateBarChart(brandTotals, totalVolume) {
+            if (barChart) {
+                barChart.destroy();
+            }
+
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: brandTotals.map(b => b.name === 'Leadshook' ? '★ ' + b.name : b.name),
+                    datasets: [{
+                        label: 'Search Volume',
+                        data: brandTotals.map(b => b.total),
+                        backgroundColor: brandTotals.map(b => brandColors[b.name] || '#92cc41'),
+                        borderColor: brandTotals.map(b => b.name === 'Leadshook' ? '#f7d51d' : '#212529'),
+                        borderWidth: brandTotals.map(b => b.name === 'Leadshook' ? 5 : 3),
+                        hoverBackgroundColor: brandTotals.map(b =>
+                            b.name === 'Leadshook' ? '#d65945' : '#7ab82d'
+                        ),
+                        hoverBorderWidth: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const brandName = brandTotals[index].name;
+                            highlightTableRow(brandName);
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#d0d0d0',
+                                lineWidth: 2,
+                                drawBorder: true,
+                                borderColor: '#212529',
+                                borderWidth: 3
+                            },
+                            ticks: {
+                                callback: value => value.toLocaleString(),
+                                font: { size: 8, family: "'Press Start 2P', cursive" },
+                                color: '#212529'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: true,
+                                borderColor: '#212529',
+                                borderWidth: 3
+                            },
+                            ticks: {
+                                font: { size: 7, family: "'Press Start 2P', cursive" },
+                                color: '#212529',
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#212529',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#000',
+                            borderWidth: 3,
+                            padding: 12,
+                            titleFont: { size: 10, family: "'Press Start 2P', cursive" },
+                            bodyFont: { size: 8, family: "'Press Start 2P', cursive" },
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y || 0;
+                                    const percentage = ((value / totalVolume) * 100).toFixed(2);
+                                    return 'Volume: ' + value.toLocaleString() + ' (' + percentage + '%)';
+                                }
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value) {
+                                const percentage = ((value / totalVolume) * 100).toFixed(1);
+                                return percentage + '%';
+                            },
+                            font: {
+                                size: 8,
+                                family: "'Press Start 2P', cursive",
+                                weight: 'bold'
+                            },
+                            color: '#212529'
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+
+        // Table sorting
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'desc';
+            }
+
+            document.querySelectorAll('.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sort === column) {
+                    th.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            const previousMonth = getPreviousMonth(currentMonth);
+            const previousBrandTotals = previousMonth ? calculateBrandTotals(previousMonth) : null;
+            const totalVolume = currentBrandData.reduce((sum, brand) => sum + brand.total, 0);
+            updateTable(currentBrandData, totalVolume, previousBrandTotals);
+        }
+
+        // Filter table by brand name
+        function filterTable() {
+            const filterValue = document.getElementById('brandFilter').value.toLowerCase();
+            const rows = document.querySelectorAll('#tableBody tr');
+
+            rows.forEach(row => {
+                const brandName = row.querySelector('td:first-child strong').textContent.toLowerCase();
+                row.style.display = brandName.includes(filterValue) ? '' : 'none';
+            });
+        }
+
+        // Toggle keywords expansion
+        function toggleKeywords(btn) {
+            const row = btn.closest('tr');
+            const keywordCell = row.querySelector('.keywords-cell');
+            const isExpanded = keywordCell.classList.toggle('expanded');
+            btn.textContent = isExpanded ? '[-]' : '[+]';
+        }
+
+        // Update table
+        function updateTable(brandTotals, totalVolume, previousBrandTotals) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            let sortedData = [...brandTotals];
+            sortedData.sort((a, b) => {
+                let aVal, bVal;
+                switch (currentSort.column) {
+                    case 'name':
+                        aVal = a.name.toLowerCase();
+                        bVal = b.name.toLowerCase();
+                        return currentSort.direction === 'asc'
+                            ? aVal.localeCompare(bVal)
+                            : bVal.localeCompare(aVal);
+                    case 'volume':
+                        aVal = a.total;
+                        bVal = b.total;
+                        break;
+                    case 'share':
+                    default:
+                        aVal = a.total / totalVolume;
+                        bVal = b.total / totalVolume;
+                        break;
+                }
+                return currentSort.direction === 'asc' ? aVal - bVal : bVal - aVal;
+            });
+
+            const maxShare = Math.max(...brandTotals.map(b => b.total / totalVolume));
+
+            sortedData.forEach(brand => {
+                const share = ((brand.total / totalVolume) * 100).toFixed(2);
+                const barWidth = Math.round((brand.total / totalVolume / maxShare) * 100);
+
+                let trend = '';
+                if (previousBrandTotals) {
+                    const previousBrand = previousBrandTotals.find(b => b.name === brand.name);
+                    if (previousBrand) {
+                        trend = getTrendIndicator(brand.total, previousBrand.total);
+                    }
+                }
+
+                const row = document.createElement('tr');
+                row.dataset.brand = brand.name;
+                if (brand.name === 'Leadshook') {
+                    row.className = 'brand-leadshook';
+                }
+
+                const keywordsPreview = brand.keywords.length > 2
+                    ? brand.keywords.slice(0, 2).join(', ') + '...'
+                    : brand.keywords.join(', ');
+                const keywordsFull = brand.keywords.join(', ');
+                const hasMore = brand.keywords.length > 2;
+
+                row.innerHTML = `
+                    <td><strong>${brand.name}</strong></td>
+                    <td class="keywords-cell" title="${keywordsFull}">
+                        <span class="keywords-preview">${keywordsPreview}</span>
+                        <span class="keywords-full">${keywordsFull}</span>
+                        ${hasMore ? `<button class="expand-btn" onclick="toggleKeywords(this)">[+]</button>` : ''}
+                    </td>
+                    <td class="volume-cell">${brand.total.toLocaleString()} ${trend}</td>
+                    <td class="percentage">${share}%</td>
+                    <td class="bar-cell">
+                        <div class="bar-container">
+                            <div class="bar" style="width: ${barWidth}%;"></div>
+                        </div>
+                        <span class="bar-label">${share}%</span>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Simple linear regression for forecasting
+        function linearRegression(data) {
+            const n = data.length;
+            if (n < 2) return { slope: 0, intercept: data[0] || 0 };
+
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            data.forEach((y, x) => {
+                sumX += x;
+                sumY += y;
+                sumXY += x * y;
+                sumXX += x * x;
+            });
+
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+
+            return { slope, intercept };
+        }
+
+        // Generate forecast points
+        function generateForecast(data, numForecastPoints = 2) {
+            const { slope, intercept } = linearRegression(data);
+            const forecast = [];
+            const startIndex = data.length;
+
+            for (let i = 0; i < numForecastPoints; i++) {
+                const predictedValue = Math.max(0, slope * (startIndex + i) + intercept);
+                forecast.push(Math.round(predictedValue));
+            }
+
+            return forecast;
+        }
+
+        // Generate forecast month labels
+        function generateForecastMonths(lastMonth, count) {
+            const months = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+            const [monthName, year] = lastMonth.split(' ');
+            let monthIndex = months.indexOf(monthName);
+            let currentYear = parseInt(year);
+
+            const forecastMonths = [];
+            for (let i = 0; i < count; i++) {
+                monthIndex++;
+                if (monthIndex >= 12) {
+                    monthIndex = 0;
+                    currentYear++;
+                }
+                forecastMonths.push(`${months[monthIndex]} ${currentYear} (F)`);
+            }
+
+            return forecastMonths;
+        }
+
+        // Update trend view with competitor comparison and forecasts
+        function updateTrendView() {
+            const months = Object.keys(monthlyData);
+            const allBrandTrends = {};
+            const shareOfSearchTrends = {};
+            const keywordTrends = {
+                'leadshook': [],
+                'leads hook': [],
+                'leadhook': [],
+                'lead hooks': []
+            };
+
+            Object.keys(brandKeywords).forEach(brand => {
+                allBrandTrends[brand] = [];
+                shareOfSearchTrends[brand] = [];
+            });
+
+            months.forEach(month => {
+                const brandTotals = calculateBrandTotals(month);
+                const totalVolume = brandTotals.reduce((sum, brand) => sum + brand.total, 0);
+
+                brandTotals.forEach(brand => {
+                    allBrandTrends[brand.name].push(brand.total);
+                    const shareOfSearch = ((brand.total / totalVolume) * 100);
+                    shareOfSearchTrends[brand.name].push(parseFloat(shareOfSearch.toFixed(2)));
+                });
+
+                const leadshookVolumes = monthlyData[month]['Leadshook'];
+                keywordTrends['leadshook'].push(leadshookVolumes[0]);
+                keywordTrends['leads hook'].push(leadshookVolumes[1]);
+                keywordTrends['leadhook'].push(leadshookVolumes[2]);
+                keywordTrends['lead hooks'].push(leadshookVolumes[3]);
+            });
+
+            const lastMonth = months[months.length - 1];
+            const forecastMonths = generateForecastMonths(lastMonth, 2);
+            const allMonthsWithForecast = [...months, ...forecastMonths];
+
+            const latestMonth = months[months.length - 1];
+            const brandTotals = calculateBrandTotals(latestMonth);
+            const leadshookData = brandTotals.find(b => b.name === 'Leadshook');
+            const leadshookVolume = leadshookData.total;
+            const totalVolume = brandTotals.reduce((sum, brand) => sum + brand.total, 0);
+            const shareOfSearch = ((leadshookVolume / totalVolume) * 100).toFixed(2);
+            const leadshookRank = brandTotals.findIndex(b => b.name === 'Leadshook') + 1;
+
+            document.getElementById('shareOfSearch').textContent = shareOfSearch + '%';
+            document.getElementById('shareOfSearchTrend').innerHTML = '';
+            document.getElementById('leadshookVolume').textContent = leadshookVolume.toLocaleString();
+            document.getElementById('leadshookVolumeTrend').innerHTML = '';
+            document.getElementById('totalVolume').textContent = totalVolume.toLocaleString();
+            document.getElementById('marketRank').textContent = '#' + leadshookRank;
+            document.getElementById('marketRankTrend').innerHTML = '';
+            document.getElementById('rankSubtext').textContent = 'of ' + brandTotals.length + ' brands';
+
+            if (trendLineChart) {
+                trendLineChart.destroy();
+            }
+
+            const volumeDatasets = [];
+            selectedCompetitors.forEach(brand => {
+                const data = allBrandTrends[brand];
+                const forecast = generateForecast(data, 2);
+                const color = brandColors[brand] || '#999';
+
+                volumeDatasets.push({
+                    label: brand,
+                    data: [...data, null, null],
+                    borderColor: color,
+                    backgroundColor: brand === 'Leadshook' ? 'rgba(231, 110, 85, 0.2)' : 'transparent',
+                    borderWidth: brand === 'Leadshook' ? 4 : 3,
+                    fill: brand === 'Leadshook',
+                    tension: 0,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: color,
+                    pointBorderColor: '#212529',
+                    pointBorderWidth: 2
+                });
+
+                if (brand === 'Leadshook') {
+                    const forecastData = new Array(data.length - 1).fill(null);
+                    forecastData.push(data[data.length - 1]);
+                    forecastData.push(...forecast);
+
+                    volumeDatasets.push({
+                        label: brand + ' (Forecast)',
+                        data: forecastData,
+                        borderColor: color,
+                        backgroundColor: 'rgba(231, 110, 85, 0.1)',
+                        borderWidth: 3,
+                        borderDash: [10, 5],
+                        fill: true,
+                        tension: 0,
+                        pointRadius: 6,
+                        pointStyle: 'triangle',
+                        pointBackgroundColor: '#f7d51d',
+                        pointBorderColor: '#212529',
+                        pointBorderWidth: 2
+                    });
+                }
+            });
+
+            const trendLineCtx = document.getElementById('trendLineChart').getContext('2d');
+            trendLineChart = new Chart(trendLineCtx, {
+                type: 'line',
+                data: {
+                    labels: allMonthsWithForecast,
+                    datasets: volumeDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#d0d0d0',
+                                lineWidth: 2,
+                                drawBorder: true,
+                                borderColor: '#212529',
+                                borderWidth: 3
+                            },
+                            ticks: {
+                                callback: value => value.toLocaleString(),
+                                font: { size: 8, family: "'Press Start 2P', cursive" },
+                                color: '#212529'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: true,
+                                borderColor: '#212529',
+                                borderWidth: 3
+                            },
+                            ticks: {
+                                font: { size: 7, family: "'Press Start 2P', cursive" },
+                                color: '#212529'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 8, family: "'Press Start 2P', cursive" },
+                                color: '#212529',
+                                boxWidth: 20,
+                                boxHeight: 10,
+                                useBorderRadius: false,
+                                padding: 10
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#212529',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#000',
+                            borderWidth: 3,
+                            padding: 12,
+                            titleFont: { size: 10, family: "'Press Start 2P', cursive" },
+                            bodyFont: { size: 8, family: "'Press Start 2P', cursive" },
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.parsed.y === null) return null;
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (shareOfSearchTrendChart) {
+                shareOfSearchTrendChart.destroy();
+            }
+
+            const shareDatasets = [];
+            selectedCompetitors.forEach(brand => {
+                const data = shareOfSearchTrends[brand];
+                const color = brandColors[brand] || '#999';
+
+                shareDatasets.push({
+                    label: brand,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: brand === 'Leadshook' ? 'rgba(231, 110, 85, 0.2)' : 'transparent',
+                    borderWidth: brand === 'Leadshook' ? 4 : 3,
+                    fill: brand === 'Leadshook',
+                    tension: 0,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: color,
+                    pointBorderColor: '#212529',
+                    pointBorderWidth: 2
+                });
+            });
+
+            const shareCtx = document.getElementById('shareOfSearchTrendChart').getContext('2d');
+            shareOfSearchTrendChart = new Chart(shareCtx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: shareDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#d0d0d0',
+                                lineWidth: 2,
+                                drawBorder: true,
+                                borderColor: '#212529',
+                                borderWidth: 3
+                            },
+                            ticks: {
+                                callback: value => value.toFixed(1) + '%',
+                                font: { size: 8, family: "'Press Start 2P', cursive" },
+                                color: '#212529'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: true,
+                                borderColor: '#212529',
+                                borderWidth: 3
+                            },
+                            ticks: {
+                                font: { size: 7, family: "'Press Start 2P', cursive" },
+                                color: '#212529'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 8, family: "'Press Start 2P', cursive" },
+                                color: '#212529',
+                                boxWidth: 20,
+                                boxHeight: 10,
+                                useBorderRadius: false,
+                                padding: 10
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#212529',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#000',
+                            borderWidth: 3,
+                            padding: 12,
+                            titleFont: { size: 10, family: "'Press Start 2P', cursive" },
+                            bodyFont: { size: 8, family: "'Press Start 2P', cursive" },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (keywordBreakdownChart) {
+                keywordBreakdownChart.destroy();
+            }
+
+            const keywordCtx = document.getElementById('keywordBreakdownChart').getContext('2d');
+            keywordBreakdownChart = new Chart(keywordCtx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'leadshook',
+                            data: keywordTrends['leadshook'],
+                            borderColor: '#e76e55',
+                            backgroundColor: 'rgba(231, 110, 85, 0.2)',
+                            borderWidth: 4,
+                            tension: 0,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#e76e55',
+                            pointBorderColor: '#212529',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: '#f7d51d',
+                            pointHoverBorderWidth: 3
+                        },
+                        {
+                            label: 'leads hook',
+                            data: keywordTrends['leads hook'],
+                            borderColor: '#92cc41',
+                            backgroundColor: 'rgba(146, 204, 65, 0.2)',
+                            borderWidth: 4,
+                            tension: 0,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#92cc41',
+                            pointBorderColor: '#212529',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: '#f7d51d',
+                            pointHoverBorderWidth: 3
+                        },
+                        {
+                            label: 'leadhook',
+                            data: keywordTrends['leadhook'],
+                            borderColor: '#209cee',
+                            backgroundColor: 'rgba(32, 156, 238, 0.2)',
+                            borderWidth: 4,
+                            tension: 0,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#209cee',
+                            pointBorderColor: '#212529',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: '#f7d51d',
+                            pointHoverBorderWidth: 3
+                        },
+                        {
+                            label: 'lead hooks',
+                            data: keywordTrends['lead hooks'],
+                            borderColor: '#f7d51d',
+                            backgroundColor: 'rgba(247, 213, 29, 0.2)',
+                            borderWidth: 4,
+                            tension: 0,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#f7d51d',
+                            pointBorderColor: '#212529',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: '#e76e55',
+                            pointHoverBorderWidth: 3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#d0d0d0',
+                                lineWidth: 2,
+                                drawBorder: true,
+                                borderColor: '#212529',
+                                borderWidth: 3
+                            },
+                            ticks: {
+                                callback: value => value.toLocaleString(),
+                                font: { size: 8, family: "'Press Start 2P', cursive" },
+                                color: '#212529'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: true,
+                                borderColor: '#212529',
+                                borderWidth: 3
+                            },
+                            ticks: {
+                                font: { size: 7, family: "'Press Start 2P', cursive" },
+                                color: '#212529'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 8, family: "'Press Start 2P', cursive" },
+                                color: '#212529',
+                                boxWidth: 20,
+                                boxHeight: 20,
+                                useBorderRadius: false,
+                                padding: 10
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#212529',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#000',
+                            borderWidth: 3,
+                            padding: 12,
+                            titleFont: { size: 10, family: "'Press Start 2P', cursive" },
+                            bodyFont: { size: 8, family: "'Press Start 2P', cursive" },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update trend table
+            const trendTableBody = document.getElementById('trendTableBody');
+            trendTableBody.innerHTML = '';
+
+            const leadshookTrendsForTable = months.map(month => {
+                const brandTotalsForMonth = calculateBrandTotals(month);
+                const leadshookDataForMonth = brandTotalsForMonth.find(b => b.name === 'Leadshook');
+                const totalVolumeForMonth = brandTotalsForMonth.reduce((sum, brand) => sum + brand.total, 0);
+                return {
+                    month: month,
+                    volume: leadshookDataForMonth.total,
+                    shareOfSearch: (leadshookDataForMonth.total / totalVolumeForMonth) * 100
+                };
+            });
+
+            leadshookTrendsForTable.forEach((trend, index) => {
+                const previousTrend = index > 0 ? leadshookTrendsForTable[index - 1] : null;
+
+                let volumeChange = '';
+                let shareChange = '';
+
+                if (previousTrend) {
+                    const volChange = trend.volume - previousTrend.volume;
+                    const volPercent = ((volChange / previousTrend.volume) * 100).toFixed(1);
+                    volumeChange = volChange >= 0
+                        ? `<span class="trend-up">+${volChange} (+${volPercent}%)</span>`
+                        : `<span class="trend-down">${volChange} (${volPercent}%)</span>`;
+
+                    const shareChg = (trend.shareOfSearch - previousTrend.shareOfSearch).toFixed(2);
+                    shareChange = parseFloat(shareChg) >= 0
+                        ? `<span class="trend-up">+${shareChg}%</span>`
+                        : `<span class="trend-down">${shareChg}%</span>`;
+                } else {
+                    volumeChange = '<span class="trend-neutral">-</span>';
+                    shareChange = '<span class="trend-neutral">-</span>';
+                }
+
+                const volumes = monthlyData[trend.month]['Leadshook'];
+                const keywords = brandKeywords['Leadshook'];
+                const maxIndex = volumes.indexOf(Math.max(...volumes));
+                const topKeyword = `${keywords[maxIndex]} (${volumes[maxIndex].toLocaleString()})`;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${trend.month}</strong></td>
+                    <td>${trend.volume.toLocaleString()}</td>
+                    <td>${volumeChange}</td>
+                    <td class="percentage">${trend.shareOfSearch.toFixed(2)}%</td>
+                    <td>${shareChange}</td>
+                    <td>${topKeyword}</td>
+                `;
+
+                trendTableBody.appendChild(row);
+            });
+        }
+
+        // Initialize dashboard
+        loadURLState().catch(err => {
+            console.error('Failed to load data:', err);
+            alert('Failed to load CSV data. Make sure you are running this from a web server, not directly from the file system.');
+        });
+    </script>
+</body>
+</html>
