@@ -652,9 +652,7 @@
                 comparisonMonth ? (categoryGrowth >= 0 ? '+' : '') + categoryGrowth.toFixed(1) + '%' : 'N/A';
 
             document.getElementById('brandCurrentVolume').textContent = currentBrandVol.toLocaleString();
-            document.getElementById('brandPreviousVolume').textContent = previousBrandVol.toLocaleString();
             document.getElementById('categoryCurrentVolume').textContent = currentCategoryVol.toLocaleString();
-            document.getElementById('categoryPreviousVolume').textContent = previousCategoryVol.toLocaleString();
 
             // Update metrics
             document.getElementById('growthDelta').textContent =

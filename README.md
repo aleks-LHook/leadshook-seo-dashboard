@@ -110,43 +110,74 @@ November 2025,Quiz & Lead Gen,quiz funnel software,150
 
 ## Monthly Update Process
 
-### 1. Get Data from Ahrefs
+### Automated Update (Recommended)
+
+Use the Ahrefs MCP integration with Claude Code to automatically fetch real-time search volumes:
+
+1. **Connect to Ahrefs MCP**
+   ```bash
+   claude /mcp
+   # Select "ahrefs" when prompted
+   ```
+
+2. **Run the Update Command**
+   ```
+   Update the [MONTH YEAR] data by using the ahrefs mcp to get real time volumes
+   ```
+   Example: "Update the January 2026 data by using the ahrefs mcp to get real time volumes"
+
+3. **Verify the Updates**
+   - Check `data/direct-competitors.csv` - all competitor branded keywords
+   - Check `data/enterprise-players.csv` - enterprise platform keywords
+   - Check `data/brand-keywords.csv` - Leadshook branded keywords
+   - Check `data/category-keywords.csv` - category keywords
+
+4. **Refresh Your Dashboard**
+   - Open the dashboard in your browser
+   - Hard refresh (Ctrl+F5 or Cmd+Shift+R)
+   - Verify all metrics are updated
+
+### Manual Update (Backup Method)
+
+If you need to update data manually without the API:
+
+#### 1. Get Data from Ahrefs
 
 For each keyword you're tracking:
 1. Go to Ahrefs Keywords Explorer
 2. Enter the keyword
-3. Note the search volume for your target country
+3. Note the search volume for your target country (US)
 
-### 2. Update Share of Search Data
+#### 2. Update Share of Search Data
 
 Add new rows to `data/direct-competitors.csv` and/or `data/enterprise-players.csv`:
 
 ```csv
-December 2025,Leadshook,leadshook,520
-December 2025,Leadshook,leads hook,160
-December 2025,Outgrow,outgrow,1950
+January 2026,Leadshook,leadshook,520
+January 2026,Leadshook,leads hook,160
+January 2026,Outgrow,outgrow,1950
 ...
 ```
 
-### 3. Update Brand Growth Data
+#### 3. Update Brand Growth Data
 
 Add new rows to `data/brand-keywords.csv`:
 
 ```csv
-December 2025,leadshook,520
-December 2025,leads hook,160
-December 2025,leadhook,55
-December 2025,lead hooks,35
+January 2026,leadshook,520
+January 2026,leads hook,160
+January 2026,leadhook,55
+January 2026,lead hooks,35
 ```
 
-### 4. Update Category Growth Data
+#### 4. Update Category Growth Data
 
 Add new rows to `data/category-keywords.csv`:
 
 ```csv
-December 2025,Funnel Builder,funnel builder,620
-December 2025,Funnel Builder,sales funnel software,610
-December 2025,Landing Page Builder,landing page builder,3600
+January 2026,Funnel Builder,funnel builder,620
+January 2026,Funnel Builder,sales funnel software,610
+January 2026,Landing Page Builder,landing page builder,3600
 ...
 ```
 
